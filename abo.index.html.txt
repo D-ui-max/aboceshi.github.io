@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>✨ ABO信息素鉴定局 ✨</title>
+    <style>
+        :root {
+            --primary: #6C5CE7;
+            --secondary: #A29BFE;
+            --bg-start: #E0C3FC;
+            --bg-end: #8EC5FC;
+            --text-dark: #2D3436;
+            --text-light: #636E72;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --danger: #FF7675;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        section { display: none; animation: fadeIn 0.5s ease-in-out; }
+        section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .home-header { text-align: center; margin-bottom: 30px; }
+        .home-header h1 { font-size: 28px; color: var(--primary); margin-bottom: 10px; }
+        .home-header p { font-size: 15px; color: var(--text-light); line-height: 1.6; }
+        .emoji-large { font-size: 60px; margin-bottom: 15px; display: block; }
+
+        .btn {
+            display: block; width: 100%; padding: 15px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; border: none; border-radius: 15px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+            margin-top: 15px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-outline {
+            background: transparent; border: 2px solid var(--primary);
+            color: var(--primary); box-shadow: none;
+        }
+
+        /* 密码页样式 */
+        .lock-icon { font-size: 50px; text-align: center; margin-bottom: 15px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group input {
+            width: 100%; padding: 15px; border: 2px solid #DFE6E9;
+            border-radius: 12px; font-size: 16px; outline: none;
+            text-align: center; letter-spacing: 2px; transition: border 0.3s;
+        }
+        .input-group input:focus { border-color: var(--primary); }
+        .error-msg { color: var(--danger); font-size: 13px; text-align: center; display: none; margin-top: 10px; }
+
+        /* 进度条 */
+        .progress-container { width: 100%; height: 8px; background: #DFE6E9; border-radius: 4px; margin-bottom: 25px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 4px; transition: width 0.4s ease; }
+        .progress-text { font-size: 13px; color: var(--text-light); text-align: right; margin-bottom: 8px; }
+
+        /* 题目样式 */
+        .question-title { font-size: 18px; font-weight: bold; margin-bottom: 20px; line-height: 1.5; }
+        .options-list { display: flex; flex-direction: column; gap: 12px; }
+        .option-btn {
+            width: 100%; padding: 15px; background: white;
+            border: 2px solid #F1F2F6; border-radius: 12px;
+            font-size: 15px; text-align: left; cursor: pointer;
+            transition: all 0.2s; color: var(--text-dark);
+        }
+        .option-btn:hover, .option-btn:active { border-color: var(--primary); background: #F8F9FF; }
+
+        /* 加载页 */
+        .loading-section { text-align: center; padding: 50px 0; }
+        .spinner {
+            width: 50px; height: 50px; border: 4px solid #F3F3F3;
+            border-top: 4px solid var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 结果页 */
+        .result-card { text-align: center; }
+        .result-badge {
+            display: inline-block; padding: 8px 20px;
+            background: var(--primary); color: white;
+            border-radius: 20px; font-size: 14px; font-weight: bold; margin-bottom: 15px;
+        }
+        .result-title { font-size: 26px; font-weight: 900; color: var(--primary); margin-bottom: 10px; }
+        .result-pheromone { font-size: 15px; color: var(--text-light); margin-bottom: 20px; font-style: italic; }
+        .result-desc {
+            font-size: 15px; line-height: 1.8; color: var(--text-dark);
+            text-align: left; background: #F8F9FA; padding: 20px;
+            border-radius: 15px; margin-bottom: 20px;
+        }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        .stat-item { background: white; padding: 12px; border-radius: 12px; border: 1px solid #EEE; }
+        .stat-label { font-size: 12px; color: var(--text-light); margin-bottom: 5px; }
+        .stat-value { font-size: 14px; font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 密码验证页 -->
+    <section id="password-gate" class="active">
+        <div class="lock-icon">🔐</div>
+        <div class="home-header">
+            <h1>机密档案库</h1>
+            <p>本鉴定局涉及高阶基因隐私<br>请输入通行密钥以解锁测试系统</p>
+        </div>
+        <div class="input-group">
+            <input type="password" id="pwd-input" placeholder="请输入通行密钥..." onkeypress="handleKeyPress(event)">
+        </div>
+        <button class="btn" onclick="checkPassword()">验证并进入 🚀</button>
+        <p id="pwd-error" class="error-msg">⚠️ 密钥错误，你的权限不足！</p>
+    </section>
+
+    <!-- 首页 -->
+    <section id="home">
+        <div class="home-header">
+            <span class="emoji-large">🧬</span>
+            <h1>ABO信息素鉴定局</h1>
+            <p>每个人的灵魂深处都隐藏着独特的ABO属性与信息素。<br>通过12道潜意识测试题，解锁你的真实第二性别。</p>
+        </div>
+        <button class="btn" onclick="startQuiz()">开始鉴定 ✨</button>
+        <p style="text-align:center; font-size:12px; color:#b2bec3; margin-top:15px;">* 本测试仅供娱乐，请凭直觉作答</p>
+    </section>
+
+    <!-- 答题页 -->
+    <section id="quiz">
+        <div class="progress-text" id="progress-text">1 / 12</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar" style="width: 8.3%"></div>
+        </div>
+        <div id="question-area"></div>
+    </section>
+
+    <!-- 加载页 -->
+    <section id="loading" class="loading-section">
+        <div class="spinner"></div>
+        <h3>正在提取你的信息素样本...</h3>
+        <p style="font-size:14px; color:#636e72; margin-top:10px;">基因序列比对中，请稍候</p>
+    </section>
+
+    <!-- 结果页 -->
+    <section id="result">
+        <div class="result-card" id="result-content"></div>
+    </section>
+</div>
+
+<script>
+    // ==================== 密码验证逻辑 ====================
+    const SECRET_PASSWORD = "abo2026";
+
+    function checkPassword() {
+        const input = document.getElementById('pwd-input').value;
+        if (input === SECRET_PASSWORD) {
+            document.getElementById('pwd-error').style.display = 'none';
+            showSection('home');
+        } else {
+            document.getElementById('pwd-error').style.display = 'block';
+            document.getElementById('pwd-input').value = '';
+            document.getElementById('pwd-input').focus();
+        }
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') checkPassword();
+    }
+
+    // ==================== 核心逻辑与数据 ====================
+    function showSection(id) {
+        document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    // 扩充至18道题的题库
+    const questionBank = [
+        { q: "周末早晨醒来，没有任何安排，你的第一反应是？", opts: [ { text: "立刻起床，规划今天要做的高效事项", scores: { a: 3, b: 1, o: 0 } }, { text: "继续赖床，刷刷手机享受慵懒时光", scores: { a: 0, b: 1, o: 3 } }, { text: "看心情吧，可能随便做点什么", scores: { a: 0, b: 3, o: 1 } }, { text: "给朋友发消息，看看谁有空出来玩", scores: { a: 1, b: 2, o: 2 } } ] },
+        { q: "在团队合作中，你通常扮演什么角色？", opts: [ { text: "领导者，喜欢掌控全局和分配任务", scores: { a: 3, b: 0, o: 0 } }, { text: "执行者，把交代的任务完美做好就行", scores: { a: 0, b: 3, o: 1 } }, { text: "协调者，照顾大家的情绪，化解矛盾", scores: { a: 0, b: 1, o: 3 } }, { text: "智囊团，只在关键时刻提出核心建议", scores: { a: 2, b: 2, o: 0 } } ] },
+        { q: "面对突如其来的压力或危机，你会？", opts: [ { text: "迎难而上，压力越大我越兴奋", scores: { a: 3, b: 0, o: 0 } }, { text: "冷静分析，按部就班寻找解决方案", scores: { a: 1, b: 3, o: 0 } }, { text: "感到焦虑，需要找人倾诉或寻求安慰", scores: { a: 0, b: 0, o: 3 } }, { text: "先避开锋芒，等风头过去再处理", scores: { a: 0, b: 2, o: 2 } } ] },
+        { q: "你更倾向于哪种社交方式？", opts: [ { text: "大型聚会，喜欢成为人群的焦点", scores: { a: 3, b: 0, o: 1 } }, { text: "三五好友的小聚，轻松自在", scores: { a: 0, b: 3, o: 2 } }, { text: "一对一深度交流，建立灵魂羁绊", scores: { a: 0, b: 1, o: 3 } }, { text: "能不出门就不出门，独处最舒服", scores: { a: 1, b: 2, o: 1 } } ] },
+        { q: "如果要在以下信息素中选一种作为你的味道，你选？", opts: [ { text: "凛冽的雪松木与冷风", scores: { a: 3, b: 1, o: 0 } }, { text: "清新的雨后青草香", scores: { a: 0, b: 3, o: 1 } }, { text: "甜腻的水蜜桃与香草", scores: { a: 0, b: 0, o: 3 } }, { text: "醇厚的黑咖啡与皮革", scores: { a: 2, b: 2, o: 0 } } ] },
+        { q: "在恋爱关系中，你最看重什么？", opts: [ { text: "绝对的忠诚与保护欲", scores: { a: 3, b: 1, o: 1 } }, { text: "平等的尊重与个人空间", scores: { a: 1, b: 3, o: 0 } }, { text: "无微不至的偏爱与安全感", scores: { a: 0, b: 0, o: 3 } }, { text: "精神上的高度契合与共鸣", scores: { a: 1, b: 2, o: 2 } } ] },
+        { q: "当你感到委屈时，通常会怎么做？", opts: [ { text: "直接表达不满，甚至反击回去", scores: { a: 3, b: 0, o: 0 } }, { text: "自我消化，睡一觉就好了", scores: { a: 0, b: 3, o: 0 } }, { text: "忍不住掉眼泪，希望有人哄", scores: { a: 0, b: 0, o: 3 } }, { text: "表面平静，但在心里默默记仇", scores: { a: 2, b: 1, o: 1 } } ] },
+        { q: "你对“规则”的态度是？", opts: [ { text: "规则是用来打破的，或者由我来制定", scores: { a: 3, b: 0, o: 0 } }, { text: "遵守规则是社会运转的基础", scores: { a: 0, b: 3, o: 1 } }, { text: "如果规则让我不开心，我会偷偷绕开", scores: { a: 1, b: 1, o: 3 } }, { text: "看情况，对我有利就遵守，不利就无视", scores: { a: 2, b: 2, o: 0 } } ] },
+        { q: "别人对你的第一印象通常是？", opts: [ { text: "气场强大，有点不敢靠近", scores: { a: 3, b: 0, o: 0 } }, { text: "温和靠谱，是个好人", scores: { a: 0, b: 3, o: 1 } }, { text: "软萌可爱/温柔细腻，想保护", scores: { a: 0, b: 0, o: 3 } }, { text: "神秘高冷，看不透在想什么", scores: { a: 2, b: 1, o: 1 } } ] },
+        { q: "如果可以拥有一种超能力，你选？", opts: [ { text: "精神控制，让所有人听命于我", scores: { a: 3, b: 0, o: 0 } }, { text: "时间静止，让我能从容处理一切", scores: { a: 0, b: 3, o: 1 } }, { text: "治愈之光，能抚平所有人的伤痛", scores: { a: 0, b: 1, o: 3 } }, { text: "读心术，看透别人的伪装", scores: { a: 2, b: 1, o: 2 } } ] },
+        { q: "面对喜欢的人，你的表现是？", opts: [ { text: "主动出击，势在必得", scores: { a: 3, b: 0, o: 0 } }, { text: "像朋友一样自然相处，慢慢试探", scores: { a: 0, b: 3, o: 1 } }, { text: "疯狂暗示，等对方来主动找我", scores: { a: 0, b: 1, o: 3 } }, { text: "假装不在意，其实内心已经翻江倒海", scores: { a: 1, b: 2, o: 2 } } ] },
+        { q: "你认为自己骨子里是一个怎样的人？", opts: [ { text: "天生的王者，不甘平庸", scores: { a: 3, b: 0, o: 0 } }, { text: "平凡的智者，追求安稳的幸福", scores: { a: 0, b: 3, o: 1 } }, { text: "浪漫的诗人，渴望被爱包围", scores: { a: 0, b: 0, o: 3 } }, { text: "矛盾的混合体，连我自己都看不懂", scores: { a: 1, b: 1, o: 2 } } ] },
+        { q: "如果你是一头野兽，你觉得自己更像？", opts: [ { text: "巡视领地的孤狼", scores: { a: 3, b: 0, o: 0 } }, { text: "安静吃草的鹿", scores: { a: 0, b: 3, o: 1 } }, { text: "蜷缩在火炉旁的猫", scores: { a: 0, b: 0, o: 3 } }, { text: "翱翔天际不落脚的鹰", scores: { a: 2, b: 1, o: 1 } } ] },
+        { q: "关于“占有欲”，你的真实想法是？", opts: [ { text: "属于我的东西，别人看一眼都不行", scores: { a: 3, b: 0, o: 0 } }, { text: "大家都是独立个体，没必要互相捆绑", scores: { a: 0, b: 3, o: 0 } }, { text: "我希望对方对我有强烈的占有欲", scores: { a: 0, b: 0, o: 3 } }, { text: "我可以占有别人，但别人别想管我", scores: { a: 2, b: 1, o: 1 } } ] },
+        { q: "走在一条漆黑的夜路上，你会？", opts: [ { text: "大步流星，黑暗对我来说不算什么", scores: { a: 3, b: 0, o: 0 } }, { text: "打开手机手电筒，匀速走完", scores: { a: 0, b: 3, o: 1 } }, { text: "有点害怕，加快脚步或者打电话给人壮胆", scores: { a: 0, b: 0, o: 3 } }, { text: "享受这种无人打扰的隐秘感", scores: { a: 1, b: 1, o: 2 } } ] },
+        { q: "收到一份完全不符合预期的礼物，你会？", opts: [ { text: "直接告诉对方我不喜欢这个", scores: { a: 3, b: 0, o: 0 } }, { text: "礼貌道谢，然后放在角落积灰", scores: { a: 0, b: 3, o: 1 } }, { text: "虽然不喜欢，但因为对方的心意而感动落泪", scores: { a: 0, b: 0, o: 3 } }, { text: "研究一下对方为什么送这个，试图反向推理", scores: { a: 1, b: 2, o: 1 } } ] },
+        { q: "如果你是一部电影里的角色，你通常是？", opts: [ { text: "推动剧情发展的终极Boss或主角", scores: { a: 3, b: 0, o: 0 } }, { text: "主角身边最靠谱的辅助/挚友", scores: { a: 0, b: 3, o: 1 } }, { text: "让人意难平的白月光/悲剧角色", scores: { a: 0, b: 0, o: 3 } }, { text: "游走在正邪之间的高智商反派", scores: { a: 2, b: 1, o: 1 } } ] },
+        { q: "对于“标记”（终身绑定）这件事，你的态度是？", opts: [ { text: "只有我能标记别人，我是唯一的主宰", scores: { a: 3, b: 0, o: 0 } }, { text: "现代社会了，不需要这种原始契约", scores: { a: 0, b: 3, o: 0 } }, { text: "极度渴望被彻底标记，融为一体", scores: { a: 0, b: 0, o: 3 } }, { text: "觉得很有趣，想试试看能不能洗掉", scores: { a: 1, b: 1, o: 2 } } ] }
+    ];
+
+    // 创意扩写结果库
+    const results = {
+        "Alpha": {
+            title: "顶级 Alpha (S级)", badge: "绝对支配者", emoji: "🐺",
+            pheromone: "信息素气味：凛冽雪松 / 烈酒 / 硝烟",
+            desc: `【灵魂判词】：“王座之上，皆为臣属。”<br><br>
+                   【基因解析】：你的灵魂深处刻着征服与守护的本能。你天生具备强大的气场与领导力，习惯掌控局面，厌恶失控的感觉。在人群中，你总是那个发号施令、让人不自觉臣服的存在。你不屑于解释，因为你的存在本身就是答案。<br><br>
+                   【信息素具象化】：当你的情绪波动时，周围空气的温度会骤降两度。你的信息素带着侵略性的木质冷香，像一把未出鞘却已见寒光的刀。闻到它的人会本能地心跳加速、瞳孔微缩，产生想要屈服或逃跑的冲动。<br><br>
+                   【匹配指南】：你需要的是一个敢于直视你眼睛的灵魂。过于顺从的人会让你感到无趣，唯有那些能在你的风暴中心保持微笑的人，才能让你心甘情愿地收起獠牙。<br><br>
+                   【隐藏副作用】：极端的保护欲有时会演变为令人窒息的囚笼。记住，最高级的支配不是锁住猎物，而是让他们自愿画地为牢。`,
+            stats: { "攻击性": "95%", "保护欲": "90%", "服从度": "5%", "易感期": "8月-10月" }
+        },
+        "Enigma": {
+            title: "稀有 Enigma", badge: "深渊凝视者", emoji: "🐉",
+            pheromone: "信息素气味：深海暗流 / 禁忌玫瑰 / 焚香",
+            desc: `【灵魂判词】：“神明不语，万物自生敬畏。”<br><br>
+                   【基因解析】：凌驾于Alpha之上的隐藏性别，概率不到千万分之一。你不仅拥有Alpha的强大，更具备一种神秘的吞噬感。你不屑于表面的张扬，而是喜欢在暗中操纵一切。你是规则的制定者，也是随时可以掀翻棋盘的执棋人。<br><br>
+                   【信息素具象化】：你的信息素没有具体的形状，它像深海的压强，无形却致命。那是一种混合了古老神庙焚香与午夜绽放的黑玫瑰的味道。一旦释放，连顶级的Alpha都会感到膝盖发软，那是来自基因链最顶端的血脉压制。<br><br>
+                   【匹配指南】：这个世界上几乎没有能与你对等的存在。你注定孤独，但这种孤独是你加冕的王冠。你不需要伴侣，你只需要一个能承载你目光的容器。<br><br>
+                   【隐藏副作用】：过度凝视深渊会导致共情能力的丧失。偶尔尝试去理解凡人的脆弱，或许能让你在这个无聊的世界里找到一点新的乐子。`,
+            stats: { "神秘感": "100%", "支配力": "MAX", "共情力": "30%", "易感期": "无法预测" }
+        },
+        "Beta": {
+            title: "高阶 Beta", badge: "秩序守望者", emoji: "🌿",
+            pheromone: "信息素气味：雨后青草 / 干净皂香 / 晨露",
+            desc: `【灵魂判词】：“风暴过境，唯我常青。”<br><br>
+                   【基因解析】：你是这个世界上最稳定、最不可或缺的存在。你没有Alpha的狂躁，也没有Omega的脆弱，你拥有的是绝对的理智与情绪稳定。你像一阵清风，让人感到舒适与安全。在所有人为信息素发狂的时代，你是唯一清醒的旁观者。<br><br>
+                   【信息素具象化】：你的信息素淡到几乎无法察觉，但那是世界上最好闻的味道——就像暴雨过后第一缕阳光晒干的纯棉衬衫。它不具备任何攻击性和诱惑力，却能奇迹般地安抚所有暴走的信息素，你是行走的镇定剂。<br><br>
+                   【匹配指南】：你包容万物，因此万物皆愿向你靠拢。无论是暴躁的Alpha还是敏感的Omega，最终都会发现，只有在你的身边，他们才能获得真正的安宁与喘息。<br><br>
+                   【隐藏副作用】：过于完美的稳定有时会被误解为冷漠。别忘了偶尔展露你的偏爱，因为被你这样理智的人坚定选择，是这世上最顶级的浪漫。`,
+            stats: { "稳定性": "99%", "包容度": "95%", "存在感": "低调", "易感期": "无" }
+        },
+        "Omega": {
+            title: "极品 Omega", badge: "灵魂蛊惑者", emoji: "🦋",
+            pheromone: "信息素气味：水蜜桃 / 甜牛奶 / 晚香玉",
+            desc: `【灵魂判词】：“我以柔软，绞杀万物之刚。”<br><br>
+                   【基因解析】：不要误会，你绝不是软弱。你的武器是极致的共情力与致命的吸引力。你的情感丰富而细腻，能够轻易感知他人的情绪变化。你渴望被偏爱、被保护，而你本身的存在，就是对这个世界最大的诱惑。你不是猎物，你是让猎人甘愿放下武器的陷阱。<br><br>
+                   【信息素具象化】：你的信息素是一场甜美的海啸。初闻是熟透的水蜜桃与温热的牛奶，但当浓度升高时，它会变成一种致幻的毒药，让闻到它的Alpha瞬间丧失理智，大脑一片空白，只剩下“靠近你、拥抱你、标记你”的唯一指令。<br><br>
+                   【匹配指南】：不要轻易交出你的后颈。你需要的是一个能接住你所有敏感与眼泪，并且愿意用一生为你筑起堡垒的人。配不上你的人，只会在你的信息素里溺亡。<br><br>
+                   【隐藏副作用】：容易在爱意中迷失自我边界。记住，你的甜美是你的天赋，而不是用来讨好他人的贡品。学会用你的柔弱去操控，而不是被操控。`,
+            stats: { "吸引力": "98%", "共情力": "95%", "防御力": "20%", "易感期": "3月-5月" }
+        },
+        "Sigma": {
+            title: "游离 Sigma", badge: "孤独漫游者", emoji: "🦅",
+            pheromone: "信息素气味：冰川冷水 / 孤星 / 金属",
+            desc: `【灵魂判词】：“不入局中，方为执棋之人。”<br><br>
+                   【基因解析】：脱离了传统ABO体系的独狼。你拥有Alpha的能力，却对权力游戏毫无兴趣；你有Omega的敏感，却拒绝依赖任何人。你游离在规则之外，不属于任何阶级，也不受任何信息素的干扰。你是一个迷人的谜，越是疏离，越让人想要靠近。<br><br>
+                   【信息素具象化】：你的信息素像是极地冰川下流动的暗河，清冷、锋利、拒人于千里之外。它不会引起任何人的生理冲动，只会让人感到一种肃然起敬的距离感。仿佛只要触碰，就会被冻伤灵魂。<br><br>
+                   【匹配指南】：没有人能真正“得到”你。如果有人试图用信息素压制你或用爱意绑架你，你只会瞬间消失。你需要的不是伴侣，而是一个能和你并肩站在悬崖边，彼此沉默却不觉得尴尬的同路人。<br><br>
+                   【隐藏副作用】：长期的游离可能导致情感系统的休眠。偶尔允许自己降落，感受一下人间的烟火气，并不会折损你的羽翼。`,
+            stats: { "独立性": "100%", "反叛值": "85%", "合群度": "10%", "易感期": "已自我抑制" }
+        },
+        "Delta": {
+            title: "变异 Delta", badge: "混沌制造者", emoji: "🔥",
+            pheromone: "信息素气味：焦糖爆米花 / 辣椒 / 跳跳糖",
+            desc: `【灵魂判词】：“薛定谔的性别，不可观测的灵魂。”<br><br>
+                   【基因解析】：基因突变带来的奇妙产物，科学界至今无法定义你的存在。你的性格充满了不可预测性，时而像个霸道的Alpha，时而像个撒娇的Omega，大多数时候又是个看热闹的Beta。你打破了二元对立，你就是混乱本身的代名词。<br><br>
+                   【信息素具象化】：你的信息素是一个盲盒。上一秒可能是甜腻的焦糖味，下一秒突然变成了呛人的红辣椒味，最后还带着点跳跳糖在舌尖炸裂的触感。闻到的人通常会经历“疑惑-震惊-上头”三个阶段，且永远无法预判你的下一次释放。<br><br>
+                   【匹配指南】：正经人根本受不了你，但无趣的人也根本配不上你。只有那些同样热爱疯狂、能在过山车上和你接吻的疯子，才能在这场混沌游戏中与你势均力敌。<br><br>
+                   【隐藏副作用】：由于基因序列不断重组，你可能经常陷入“我到底是谁”的哲学迷茫。别想了，享受这种每天都是新自己的快感吧！`,
+            stats: { "多变性": "MAX", "趣味性": "99%", "可控性": "0%", "易感期": "随机触发" }
+        }
+    };
+
+    let currentQuestion = 0;
+    let selectedQuestions = [];
+    let scores = { a: 0, b: 0, o: 0 };
+    const TOTAL_QUESTIONS = 12;
+
+    // 洗牌算法抽取12题
+    function shuffleAndPick() {
+        let shuffled = [...questionBank].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, TOTAL_QUESTIONS);
+    }
+
+    function startQuiz() {
+        currentQuestion = 0;
+        scores = { a: 0, b: 0, o: 0 };
+        selectedQuestions = shuffleAndPick();
+        showSection('quiz');
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const qData = selectedQuestions[currentQuestion];
+        
+        document.getElementById('progress-text').innerText = `${currentQuestion + 1} / ${TOTAL_QUESTIONS}`;
+        document.getElementById('progress-bar').style.width = `${((currentQuestion + 1) / TOTAL_QUESTIONS) * 100}%`;
+
+        let html = `<h3 class="question-title">${qData.q}</h3><div class="options-list">`;
+        qData.opts.forEach((opt, index) => {
+            html += `<button class="option-btn" onclick="selectOption(${index})">${opt.text}</button>`;
+        });
+        html += `</div>`;
+        
+        const area = document.getElementById('question-area');
+        area.style.opacity = 0;
+        setTimeout(() => {
+            area.innerHTML = html;
+            area.style.opacity = 1;
+            area.style.transition = 'opacity 0.3s';
+        }, 200);
+    }
+
+    function selectOption(index) {
+        const optScores = selectedQuestions[currentQuestion].opts[index].scores;
+        scores.a += optScores.a;
+        scores.b += optScores.b;
+        scores.o += optScores.o;
+
+        currentQuestion++;
+        if (currentQuestion < TOTAL_QUESTIONS) {
+            renderQuestion();
+        } else {
+            calculateResult();
+        }
+    }
+
+    function calculateResult() {
+        showSection('loading');
+        
+        setTimeout(() => {
+            const { a, b, o } = scores;
+            const maxScore = Math.max(a, b, o);
+            
+            let resultKey = "";
+
+            if (a > 25) {
+                resultKey = "Enigma"; 
+            } else if (Math.abs(a - b) <= 3 && Math.abs(b - o) <= 3 && Math.abs(a - o) <= 3) {
+                resultKey = "Delta"; 
+            } else if (maxScore === a) {
+                if (b > o) resultKey = "Sigma"; 
+                else resultKey = "Alpha";
+            } else if (maxScore === b) {
+                resultKey = "Beta";
+            } else if (maxScore === o) {
+                resultKey = "Omega";
+            }
+
+            renderResult(resultKey);
+        }, 2500);
+    }
+
+    function renderResult(key) {
+        const res = results[key];
+        let statsHtml = "";
+        for (const [label, value] of Object.entries(res.stats)) {
+            statsHtml += `
+                <div class="stat-item">
+                    <div class="stat-label">${label}</div>
+                    <div class="stat-value">${value}</div>
+                </div>`;
+        }
+
+        const html = `
+            <span class="emoji-large">${res.emoji}</span>
+            <div class="result-badge">${res.badge}</div>
+            <h2 class="result-title">${res.title}</h2>
+            <p class="result-pheromone">${res.pheromone}</p>
+            <div class="result-desc">${res.desc}</div>
+            <div class="stats-grid">${statsHtml}</div>
+            <button class="btn" onclick="startQuiz()">重新测试 🔄</button>
+            <button class="btn btn-outline" onclick="showSection('password-gate')">返回首页</button>
+        `;
+
+        document.getElementById('result-content').innerHTML = html;
+        showSection('result');
+    }
+</script>
+
+</body>
+</html>
